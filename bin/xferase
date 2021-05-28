@@ -1,0 +1,174 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# TODO: Explain yourself
+
+# Parse opts -------------------------------------------------------------------
+require 'xferase'
+require 'optparse'
+
+parser = OptionParser.new do |opts|
+  opts.version = Xferase::VERSION
+  opts.banner  = <<~BANNER
+    Usage: xferase [--version] [-h | --help] [<args>]
+  BANNER
+
+  opts.on(
+    '-i INBOX', '--inbox=INBOX',
+    'path to the inbox (required)'
+  )
+
+  opts.on(
+    '-s STAGING', '--staging=STAGING',
+    'path to the staging directory (required)'
+  )
+
+  opts.on(
+    '-l LIBRARY', '--library=LIBRARY',
+    'path to the master library'
+  )
+
+  opts.on(
+    '-w LIBRARY_WEB', '--library-web=LIBRARY_WEB',
+    'path to the web-optimized library'
+  )
+
+  opts.on(
+    '-g INTERVAL', '--grace-period=INTERVAL',
+    'wait n seconds for additional files before import'
+  )
+end
+
+begin
+  params = {}
+  parser.parse!(into: params)
+  params.freeze
+
+  raise "no inbox directory given" if !params.key?(:inbox)
+  raise "no staging directory given" if !params.key?(:staging)
+
+  if (params.keys & %i[library library-web]).none?
+    raise "no library directory given"
+  end
+rescue => e
+  warn(e.message)
+  warn(parser.help) if e.is_a?(OptionParser::ParseError)
+  exit 1
+end
+
+# Config -----------------------------------------------------------------------
+require 'logger'
+
+ENV['MEDIAINFO_XML_PARSER'] ||= 'nokogiri'
+GRACE_PERIOD = params.fetch(:'grace-period') { 0 }.to_i # seconds
+SRC_DEST_MAP = {
+  "#{params[:staging]}/desktop" => params[:'library'],
+  "#{params[:staging]}/web" => params[:'library-web'],
+}.select { |k, v| File.directory?(v) }
+
+IMPORT_CMD = %(
+  photein \
+    --verbose \
+    --source %s \
+    --dest %s \
+    --optimize-for %s
+)
+
+FORMAT_GROUPS = [%w(.jpg .dng .heic), %w(.mov .mp4), %w(.png)]
+
+LOGGER = Logger.new($stdout).tap(&:info!)
+
+# Setup ------------------------------------------------------------------------
+require 'debouncer'
+require 'fileutils'
+require 'pathname'
+require 'rb-inotify'
+require 'tmpdir'
+
+Thread.abort_on_exception = true
+SRC_DEST_MAP.keys.each(&FileUtils.method(:mkdir_p))
+
+mutex = Mutex.new
+debouncer = Debouncer.new(GRACE_PERIOD) do |*files|
+  SRC_DEST_MAP.keys.each { |dir| FileUtils.ln(files, dir) }
+  FileUtils.rm(files + Dir["#{params.fetch(:staging)}/web/*.DNG"]) # FIXME (ugly hack)
+
+  break if debouncer.inspect_params[:threads] > 2 # don't let threads pile up
+
+  mutex.synchronize do
+    SRC_DEST_MAP.each do |src, dest|
+      system(IMPORT_CMD % [src, dest, src.split('/').last])
+    end
+  rescue => e
+    warn e.message
+  end
+end.reducer(:+)
+
+# Resume from interruption/failure ---------------------------------------------
+debouncer.call unless SRC_DEST_MAP.keys.all?(&Dir.method(:empty?))
+
+Dir["#{params.fetch(:inbox)}/**/*"]
+  .select(&File.method(:file?))
+  .each { |path| debouncer.call(path) }
+
+# Start ------------------------------------------------------------------------
+Thread.new do
+  call_debouncer = ->(event) do
+    debouncer.call(event.absolute_name)
+  rescue => e
+    warn e.message
+  end
+
+  import_notifier = INotify::Notifier.new
+  import_notifier.watch(params.fetch(:inbox), :close_write, &call_debouncer)
+
+  # NOTE: inotify is not recursive,
+  # so subdirectories must be watched separately!
+  # (Why do Syncthing folders get special treatment?
+  # Because ST works by creating hidden tempfiles and moving them upon completion)
+  stfolders, simple_subdirs = Dir["#{params.fetch(:inbox)}/**/*"]
+    .select(&File.method(:directory?))
+    .partition { |dir| Dir.children(dir).include?('.stfolder') }
+
+  simple_subdirs.each { |dir| import_notifier.watch(dir, :close_write, &call_debouncer) }
+  stfolders.each { |dir| import_notifier.watch(dir, :moved_to, &call_debouncer) }
+
+  import_notifier.run
+end
+
+Thread.new do
+  sync_deletions = ->(event) do
+    LOGGER.info("#{event.name} has disappeared!")
+
+    deleted_file   = Pathname(event.absolute_name).expand_path
+
+    sister_file    = if deleted_file.to_s.start_with?(File.expand_path(params[:'library']))
+                      deleted_file.sub(*params.values_at(:'library', :'library-web'))
+                    else
+                      deleted_file.sub(*params.values_at(:'library-web', :'library'))
+                    end
+
+    sister_formats = FORMAT_GROUPS.find { |group| group.include?(deleted_file.extname) }
+
+    related_files  = [deleted_file, sister_file]
+      .product(sister_formats)
+      .map { |file, ext| file.sub_ext(ext) }
+      .select(&:file?)
+
+    # (Why mv to tmpdir first? Why not rm straight away?
+    # Because rm would recursively trigger this inotify callback.)
+    related_files.each { |f| LOGGER.info("deleting #{f.realpath}") }
+    FileUtils.mv(related_files, Dir.tmpdir)
+    FileUtils.rm(related_files.map { |f| File.join(Dir.tmpdir, f.basename) })
+  end
+
+  deletion_notifier = INotify::Notifier.new
+
+  # NOTE: inotify is not recursive,
+  # so subdirectories must be watched separately!
+  (Dir["#{params.fetch(:'library')}/**/*"] + Dir["#{params.fetch(:'library-web')}/**/*"])
+    .select(&File.method(:directory?))
+    .each { |dir| deletion_notifier.watch(dir, :delete, &sync_deletions) }
+
+  deletion_notifier.run
+end.join
