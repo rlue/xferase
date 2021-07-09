@@ -3,20 +3,17 @@
 require 'singleton'
 require 'optparse'
 
-module Photein
+module Xferase
   class Config
     include Singleton
 
     OPTIONS = [
-      ['-v',             '--verbose',                              'print verbose output'],
-      ['-s SOURCE',      '--source=SOURCE',                        'specify the source directory'],
-      ['-d DESTINATION', '--dest=DESTINATION',                     'specify the destination directory'],
-      ['-r',             '--recursive',                            'ingest source files recursively'],
-      ['-k',             '--keep',                                 'do not delete source files'],
-      ['-i',             '--interactive',                          'ask whether to import each file found'],
-      ['-n',             '--dry-run',                              'perform a "no-op" trial run'],
-      [                  '--safe',                                 'skip files in use by other processes'],
-      [                  '--optimize-for=TARGET', %i[desktop web], 'compress images/video before importing']
+      ['-v',              '--verbose',                 'print verbose output'],
+      ['-i INBOX',        '--inbox=INBOX',             'path to the inbox (required)'],
+      ['-s STAGING',      '--staging=STAGING',         'path to the staging directory (required)'],
+      ['-l LIBRARY',      '--library=LIBRARY',         'path to the master library (required)'],
+      ['-w LIBRARY_WEB',  '--library-web=LIBRARY_WEB', 'path to the web-optimized library'],
+      ['-g INTERVAL',     '--grace-period=INTERVAL',   'wait n seconds for additional files before import'],
     ].freeze
 
     OPTION_NAMES = OPTIONS
@@ -30,19 +27,19 @@ module Photein
         @params = {}
 
         parser = OptionParser.new do |opts|
-          opts.version = Photein::VERSION
+          opts.version = Xferase::VERSION
           opts.banner  = <<~BANNER
-            Usage: photein [--version] [-h | --help] [<args>]
+            Usage: xferase [--version] [-h | --help] [<args>]
           BANNER
 
           OPTIONS.each { |opt| opts.on(*opt) }
         end.tap { |p| p.parse!(into: @params) }
 
-        @params[:verbose] ||= @params[:'dry-run']
         @params.freeze
 
-        raise "no source directory given" if !@params.key?(:source)
-        raise "no destination directory given" if !@params.key?(:dest)
+        raise "no inbox directory given" if !params.key?(:inbox)
+        raise "no staging directory given" if !params.key?(:staging)
+        raise "no master library given" if !params.key?(:library)
       rescue => e
         warn("#{parser.program_name}: #{e.message}")
         warn(parser.help) if e.is_a?(OptionParser::ParseError)
