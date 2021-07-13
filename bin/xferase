@@ -1,16 +1,14 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# Parse opts -------------------------------------------------------------------
+# Setup & Config ---------------------------------------------------------------
 require 'xferase'
 
 Xferase::Config.parse_opts!
 Xferase::Logger.open
 
-# Config -----------------------------------------------------------------------
-
 ENV['MEDIAINFO_XML_PARSER'] ||= 'nokogiri'
-GRACE_PERIOD = Xferase::Config.grace_period.to_i # seconds
+
 SRC_DEST_MAP = {
   "#{Xferase::Config.staging}/desktop" => Xferase::Config.library,
   "#{Xferase::Config.staging}/web" => Xferase::Config.library_web,
@@ -37,7 +35,7 @@ Thread.abort_on_exception = true
 SRC_DEST_MAP.keys.each(&FileUtils.method(:mkdir_p))
 
 mutex = Mutex.new
-debouncer = Debouncer.new(GRACE_PERIOD) do |*files|
+debouncer = Debouncer.new(Xferase::Config.grace_period.to_i) do |*files|
   SRC_DEST_MAP.keys.each { |dir| FileUtils.ln(files, dir) }
   FileUtils.rm(files + Dir["#{Xferase::Config.staging}/web/*.DNG"]) # FIXME (ugly hack)
 
