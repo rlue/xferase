@@ -1,5 +1,4 @@
-* eliminate need for staging directory
-* Phone sync UX: don’t remove originals from phone until after new files appear
+* Replace staging directory with crash log (see ADR #1)
 * Rewrite inotify watcher to handle appearance of directories
 * auto-create inbox/staging/libraries if they don’t exist
 * double-check deletion-sync logic
