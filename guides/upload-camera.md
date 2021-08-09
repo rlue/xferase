@@ -181,7 +181,7 @@ $ vim ~/.local/share/systemd/user/dcim-transfer.service
     After=dev-disk-by\x2dlabel-RICOH_GR.device
 
     [Service]
-    ExecStart=/bin/sh -c 'mount /media/ricoh_gr; find /media/ricoh_gr/DCIM -type f -exec mv -t /path/to/xferase/inbox "{}" +; rm -rf /media/ricoh_gr/DCIM/*; umount /media/ricoh_gr'
+    ExecStart=/bin/sh -c 'mount /media/ricoh_gr && find /media/ricoh_gr/DCIM -type f -exec mv -t /path/to/xferase/inbox "{}" + && find /media/ricoh_gr/DCIM/ -type d | tac | xargs rmdir --ignore-fail-on-non-empty "{}" + && umount /media/ricoh_gr'
     Restart=no
 
     [Install]
