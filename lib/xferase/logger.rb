@@ -3,7 +3,7 @@
 require 'logger'
 require 'singleton'
 
-module Photein
+module Xferase
   class Logger
     include Singleton
 
@@ -14,8 +14,8 @@ module Photein
         @stdout = ::Logger.new($stdout)
         @stderr = ::Logger.new($stderr)
 
-        Photein::Config.verbose ? stdout.debug! : stdout.info!
-        Photein::Config.verbose ? stderr.warn!  : stderr.fatal!
+        Xferase::Config.verbose ? stdout.debug! : stdout.info!
+        Xferase::Config.verbose ? stderr.warn!  : stderr.fatal!
       end
 
       %i[unknown fatal error warn].each do |m|
