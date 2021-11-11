@@ -37,9 +37,9 @@ module Xferase
 
         @params.freeze
 
-        raise "no inbox directory given" if !params.key?(:inbox)
-        raise "no staging directory given" if !params.key?(:staging)
-        raise "no master library given" if !params.key?(:library)
+        raise "no inbox directory given" if !@params.key?(:inbox)
+        raise "no staging directory given" if !@params.key?(:staging)
+        raise "no master library given" if !@params.key?(:library)
       rescue => e
         warn("#{parser.program_name}: #{e.message}")
         warn(parser.help) if e.is_a?(OptionParser::ParseError)
