@@ -16,11 +16,10 @@ SRC_DEST_MAP = {
 
 IMPORT_CMD = %(
   photein \
-    --verbose \
     --source %s \
     --dest %s \
     --optimize-for %s
-)
+) + (Xferase::Config.verbose ? ' --verbose' : '')
 
 FORMAT_GROUPS = [%w(.jpg .dng .heic), %w(.mov .mp4), %w(.png)]
 
@@ -60,6 +59,7 @@ Dir["#{Xferase::Config.inbox}/**/*"]
 # Start ------------------------------------------------------------------------
 Thread.new do
   call_debouncer = ->(event) do
+    Xferase::Logger.debug("#{event.name}: new file detected in watch directory")
     debouncer.call(event.absolute_name)
   rescue => e
     warn e.message
