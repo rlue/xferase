@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# Setup & Config ---------------------------------------------------------------
+# Config -----------------------------------------------------------------------
 require 'xferase'
 
 Xferase::Config.parse_opts!
@@ -12,7 +12,7 @@ ENV['MEDIAINFO_XML_PARSER'] ||= 'nokogiri'
 SRC_DEST_MAP = {
   "#{Xferase::Config.staging}/desktop" => Xferase::Config.library,
   "#{Xferase::Config.staging}/web" => Xferase::Config.library_web,
-}.select { |k, v| File.directory?(v) }
+}.compact
 
 IMPORT_CMD = %(
   photein \
@@ -30,8 +30,16 @@ require 'pathname'
 require 'rb-inotify'
 require 'tmpdir'
 
+%i[inbox staging library library_web]
+  .map { |dir| Xferase::Config.send(dir) }
+  .compact
+  .reject(&File.method(:directory?))
+  .each do |dir|
+    Xferase::Logger.info("#{dir}: not found; creating now...")
+    FileUtils.mkdir_p(dir)
+  end
+
 Thread.abort_on_exception = true
-SRC_DEST_MAP.keys.each(&FileUtils.method(:mkdir_p))
 
 mutex = Mutex.new
 debouncer = Debouncer.new(Xferase::Config.grace_period.to_i) do |*files|
