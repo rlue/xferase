@@ -45,6 +45,9 @@ mutex = Mutex.new
 debouncer = Debouncer.new(Xferase::Config.grace_period.to_i) do |*files|
   files = files.map(Pathname.method(&:new))
                .select(&:exist?)
+               .reject do |file|
+                 file.dirname.join(".syncthing.#{file.basename}.tmp").exist?
+               end
 
   SRC_DEST_MAP.keys.each { |dir| FileUtils.ln(files, dir) }
   FileUtils.rm(files + Dir["#{Xferase::Config.staging}/web/*.DNG"]) # FIXME (ugly hack)
@@ -70,6 +73,8 @@ Dir["#{Xferase::Config.inbox}/**/*"]
 # Start ------------------------------------------------------------------------
 Thread.new do
   call_debouncer = ->(event) do
+    next if event.name.start_with?('.')
+
     Xferase::Logger.debug("#{event.name}: new file detected in watch directory")
     debouncer.call(event.absolute_name)
   rescue => e
