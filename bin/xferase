@@ -43,6 +43,9 @@ Thread.abort_on_exception = true
 
 mutex = Mutex.new
 debouncer = Debouncer.new(Xferase::Config.grace_period.to_i) do |*files|
+  files = files.map(Pathname.method(&:new))
+               .select(&:exist?)
+
   SRC_DEST_MAP.keys.each { |dir| FileUtils.ln(files, dir) }
   FileUtils.rm(files + Dir["#{Xferase::Config.staging}/web/*.DNG"]) # FIXME (ugly hack)
 
