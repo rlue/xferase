@@ -58,3 +58,40 @@ alternate library, which will then trigger the re-deletion of the newly edited
 image in the original library.
 
 What to do?
+
+2021/12/07
+----------
+
+So now I want to get rid of the staging directory. My primary insight here is
+to import to both libraries _simultaneously_ using threads. This is tricky
+with Photein, because presently, the whole interface to photein is wrapped up
+as
+
+    [desktop, web].each do |target_library|
+      Photein::Config.set(...)
+      Photein.run
+    end
+
+I could parallelize this, but then it’d just be _batch_ importing in parallel,
+when what I really want to do is import _individual files_ in parallel.
+
+> #### Scratch this—there might be a better way...
+>
+> This means that in order to make this work, xferase needs to pull the curtain
+> back on what Photein does even further. And to make that work, Photein has to
+> expose access to its configuration more than it previously had.
+> 
+> Where before, destination directories and optimization levels were global
+> configuration parameters, now, `MediaFile#import` must be able to accept such
+> arguments on a per-invocation basis.
+
+What if Photein were built to accept multiple destination directories? Like:
+
+    $ photein --source=<...> --master-library=<...> --web-library=<...>
+
+Then, we could even _simplify_ the Xferase code as:
+
+    Photein::Config.set(...)
+    Photein.run
+
+Let photein handle the parallelization.
