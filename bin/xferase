@@ -43,7 +43,7 @@ Thread.abort_on_exception = true
 
 mutex = Mutex.new
 debouncer = Debouncer.new(Xferase::Config.grace_period.to_i) do |*files|
-  files = files.map(Pathname.method(&:new))
+  files = files.map(&Pathname.method(:new))
                .select(&:exist?)
                .reject do |file|
                  file.dirname.join(".syncthing.#{file.basename}.tmp").exist?
