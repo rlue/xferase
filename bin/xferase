@@ -5,7 +5,7 @@
 require 'xferase'
 
 Xferase::Config.parse_opts!
-Xferase::Logger.open
+Xferase.logger.open
 
 ENV['MEDIAINFO_XML_PARSER'] ||= 'nokogiri'
 
@@ -35,7 +35,7 @@ require 'tmpdir'
   .compact
   .reject(&File.method(:directory?))
   .each do |dir|
-    Xferase::Logger.info("#{dir}: not found; creating now...")
+    Xferase.logger.info("#{dir}: not found; creating now...")
     FileUtils.mkdir_p(dir)
   end
 
@@ -75,7 +75,7 @@ Thread.new do
   call_debouncer = ->(event) do
     next if event.name.start_with?('.')
 
-    Xferase::Logger.debug("#{event.name}: new file detected in watch directory")
+    Xferase.logger.debug("#{event.name}: new file detected in watch directory")
     debouncer.call(event.absolute_name)
   rescue => e
     warn e.message
@@ -100,7 +100,7 @@ end
 
 Thread.new do
   sync_deletions = ->(event) do
-    Xferase::Logger.info("#{event.name} has disappeared!")
+    Xferase.logger.info("#{event.name} has disappeared!")
 
     deleted_file   = Pathname(event.absolute_name).expand_path
 
@@ -119,7 +119,7 @@ Thread.new do
 
     # (Why mv to tmpdir first? Why not rm straight away?
     # Because rm would recursively trigger this inotify callback.)
-    related_files.each { |f| Xferase::Logger.info("deleting #{f.realpath}") }
+    related_files.each { |f| Xferase.logger.info("deleting #{f.realpath}") }
     FileUtils.mv(related_files, Dir.tmpdir)
     FileUtils.rm(related_files.map { |f| File.join(Dir.tmpdir, f.basename) })
   end

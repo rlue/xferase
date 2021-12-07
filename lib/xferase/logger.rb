@@ -4,6 +4,14 @@ require 'logger'
 require 'singleton'
 
 module Xferase
+  class << self
+    attr_writer :logger
+
+    def logger
+      @logger ||= Xferase::Logger
+    end
+  end
+
   class Logger
     include Singleton
 
