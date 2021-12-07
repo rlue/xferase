@@ -3,9 +3,11 @@
 
 # Config -----------------------------------------------------------------------
 require 'xferase'
+require 'photein'
 
 Xferase::Config.parse_opts!
 Xferase.logger.open
+Photein.logger = Xferase.logger
 
 ENV['MEDIAINFO_XML_PARSER'] ||= 'nokogiri'
 
@@ -13,13 +15,6 @@ SRC_DEST_MAP = {
   "#{Xferase::Config.staging}/desktop" => Xferase::Config.library,
   "#{Xferase::Config.staging}/web" => Xferase::Config.library_web,
 }.compact
-
-IMPORT_CMD = %(
-  photein \
-    --source %s \
-    --dest %s \
-    --optimize-for %s
-) + (Xferase::Config.verbose ? ' --verbose' : '')
 
 FORMAT_GROUPS = [%w(.jpg .dng .heic), %w(.mov .mp4), %w(.png)]
 
@@ -56,7 +51,13 @@ debouncer = Debouncer.new(Xferase::Config.grace_period.to_i) do |*files|
 
   mutex.synchronize do
     SRC_DEST_MAP.each do |src, dest|
-      system(IMPORT_CMD % [src, dest, src.split('/').last])
+      Photein::Config.set(
+        source: src,
+        dest: dest,
+        'optimize-for': Pathname(src).basename.to_sym
+      )
+
+      Photein.run
     end
   rescue => e
     warn e.message
