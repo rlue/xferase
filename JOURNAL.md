@@ -49,18 +49,23 @@ STATUS: Done
 
 ### A Very Big Bug
 
-STATUS: Pending
+STATUS: Redacted
 
-If you so much as EDIT an image on one machine, syncthing will handle it by
-replacing the file on synced remotes. Xferase will see the disappearance of
-that file, which will trigger the deletion of the corresponding image in the
-alternate library, which will then trigger the re-deletion of the newly edited
-image in the original library.
+It appears the following entry was completely incorrect.
+(Reproduce and verify your claims before committing them to writing next time!)
 
-What to do?
+> ~~If you so much as EDIT an image on one machine, syncthing will handle it by
+> replacing the file on synced remotes. Xferase will see the disappearance of
+> that file, which will trigger the deletion of the corresponding image in the
+> alternate library, which will then trigger the re-deletion of the newly edited
+> image in the original library.~~
+> 
+> ~~What to do?~~
 
 2021/12/07
 ----------
+
+Status: Done
 
 So now I want to get rid of the staging directory. My primary insight here is
 to import to both libraries _simultaneously_ using threads. This is tricky
