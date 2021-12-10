@@ -13,4 +13,4 @@ RUN apk add --no-cache --update \
 
 RUN gem install xferase
 
-ENTRYPOINT xferase --inbox "$INBOX" --staging "$STAGING" --library "$LIBRARY" --library-web "$LIBRARY_WEB" --grace-period "$GRACE_PERIOD"
+ENTRYPOINT xferase --inbox "$INBOX" --library "$LIBRARY" --library-web "$LIBRARY_WEB"

@@ -10,10 +10,8 @@ module Xferase
     OPTIONS = [
       ['-v',              '--verbose',                 'print verbose output'],
       ['-i INBOX',        '--inbox=INBOX',             'path to the inbox (required)'],
-      ['-s STAGING',      '--staging=STAGING',         'path to the staging directory (required)'],
       ['-l LIBRARY',      '--library=LIBRARY',         'path to the master library (required)'],
       ['-w LIBRARY_WEB',  '--library-web=LIBRARY_WEB', 'path to the web-optimized library'],
-      ['-g INTERVAL',     '--grace-period=INTERVAL',   'wait n seconds for additional files before import'],
     ].freeze
 
     OPTION_NAMES = OPTIONS
@@ -38,8 +36,8 @@ module Xferase
         @params.freeze
 
         raise "no inbox directory given" if !@params.key?(:inbox)
-        raise "no staging directory given" if !@params.key?(:staging)
-        raise "no master library given" if !@params.key?(:library)
+        (%i[library library-web] & @params.keys)
+          .then { |dest_dirs| raise "no destination library given" if dest_dirs.empty? }
       rescue => e
         warn("#{parser.program_name}: #{e.message}")
         warn(parser.help) if e.is_a?(OptionParser::ParseError)

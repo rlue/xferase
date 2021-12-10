@@ -2,7 +2,7 @@
 Description=Photo/video import daemon
 
 [Service]
-ExecStart=$HOME/.rbenv/bin/rbenv exec xferase --inbox="$HOME/Pictures/.inbox" --staging="$HOME/Pictures/.staging" --library="$HOME/Pictures/master" --library-web="$HOME/Pictures/web"
+ExecStart=$HOME/.rbenv/bin/rbenv exec xferase --inbox="$HOME/Pictures/.inbox" --library="$HOME/Pictures/master" --library-web="$HOME/Pictures/web"
 Restart=on-failure
 
 [Install]

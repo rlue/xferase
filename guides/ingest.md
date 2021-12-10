@@ -36,7 +36,6 @@ $ docker run -d \
     --env TZ=$(timedatectl show --property=Timezone --value) \
     --volume $HOME/Pictures:/data \
     --env INBOX=/data/.inbox \
-    --env STAGING=/data/.staging \
     --env LIBRARY=/data/master \
     --env LIBRARY_WEB=/data/web \
     rlue/xferase
@@ -57,7 +56,6 @@ services:
   environment:
     TZ: America/Los_Angeles  # or whatever the value of `timedatectl show --property=Timezone --value` is
     INBOX: /data/.inbox
-    STAGING: /data/.staging
     LIBRARY: /data/master
     LIBRARY_WEB: /data/web
   restart: unless-stopped
@@ -95,7 +93,6 @@ Option 2: RubyGems + systemd
        [Service]
        ExecStart=xferase \  # Using rbenv or rvm? Use `rbenv exec xferase` or `rvm-exec xferase` instead
          --inbox=$HOME/Pictures/.inbox \
-         --staging=$HOME/Pictures/.staging \
          --library=$HOME/Pictures/master \
          --library-web=$HOME/Pictures/web
        Restart=on-failure

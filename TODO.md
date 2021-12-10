@@ -1,4 +1,3 @@
-* Replace staging directory with crash log (see ADR #1)
 * Rewrite inotify watcher to handle appearance of directories
 * double-check deletion-sync logic
   and make sure we don’t delete files with the same timestamp

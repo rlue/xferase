@@ -186,20 +186,13 @@ $ docker run -d \
     --env TZ=$(timedatectl show --property=Timezone --value) \
     --volume $HOME/Pictures:/data \
     --env INBOX=/data/.inbox \
-    --env STAGING=/data/.staging \
     --env LIBRARY=/data/master \
     rlue/xferase
 ```
 
 Any photos or videos placed in the **inbox**
-will be automatically moved to the **staging folder** for processing.
-From there, files are moved to the **library**,
+will be automatically moved to the **library**,
 with videos being compressed to save space on disk.
-
-> 🤔 **What’s with the staging folder?**
->
-> Using a temp folder makes it easier to resume from a crash,
-> especially when the `LIBRARY_WEB` env var is set.
 
 #### Option: `LIBRARY_WEB`
 
@@ -210,7 +203,6 @@ $ docker run -d \
     --env TZ=$(timedatectl show --property=Timezone --value) \
     --volume $HOME/Pictures:/data \
     --env INBOX=/data/.inbox \
-    --env STAGING=/data/.staging \
     --env LIBRARY=/data/master \
     --env LIBRARY_WEB=/data/web \
     rlue/xferase
@@ -228,30 +220,6 @@ it will be automatically deleted from the other.
 > This also applies to copies of the same image in different formats:
 > if you shoot RAW+JPEG, deleting a .jpg will cause Xferase to delete the
 > corresponding raw image file (and vice versa).
-
-#### Option: `GRACE_PERIOD`
-
-```sh
-$ docker run -d \
-    --name xferase \
-    --user $(id -u) \
-    --env TZ=$(timedatectl show --property=Timezone --value) \
-    --volume $HOME/Pictures:/data \
-    --env INBOX=/data/.inbox \
-    --env STAGING=/data/.staging \
-    --env LIBRARY=/data/master \
-    --env LIBRARY_WEB=/data/web \
-    --env GRACE_PERIOD=60 \
-    rlue/xferase
-```
-
-Xferase will wait 60 seconds before initiating the import process.
-
-Why would you want this?
-Because not every picture you take belongs in your collection—maybe
-you just wanted to show a friend a weird bug you found on the sidewalk.
-With the grace period set, you can film it, send it off, and delete it
-before Xferase wastes CPU time transcoding it (twice).
 
 Guides
 ------

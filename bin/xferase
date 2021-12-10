@@ -7,14 +7,14 @@ require 'photein'
 
 Xferase::Config.parse_opts!
 Xferase.logger.open
+
+Photein::Config.set(
+  'library-desktop': Xferase::Config.library,
+  'library-web': Xferase::Config.library_web,
+)
 Photein.logger = Xferase.logger
 
 ENV['MEDIAINFO_XML_PARSER'] ||= 'nokogiri'
-
-SRC_DEST_MAP = {
-  "#{Xferase::Config.staging}/desktop" => Xferase::Config.library,
-  "#{Xferase::Config.staging}/web" => Xferase::Config.library_web,
-}.compact
 
 FORMAT_GROUPS = [%w(.jpg .dng .heic), %w(.mov .mp4), %w(.png)]
 
@@ -25,7 +25,7 @@ require 'pathname'
 require 'rb-inotify'
 require 'tmpdir'
 
-%i[inbox staging library library_web]
+%i[inbox library library_web]
   .map { |dir| Xferase::Config.send(dir) }
   .compact
   .reject(&File.method(:directory?))
@@ -36,102 +36,81 @@ require 'tmpdir'
 
 Thread.abort_on_exception = true
 
-mutex = Mutex.new
-debouncer = Debouncer.new(Xferase::Config.grace_period.to_i) do |*files|
-  files = files.map(&Pathname.method(:new))
-               .select(&:exist?)
-               .reject do |file|
-                 file.dirname.join(".syncthing.#{file.basename}.tmp").exist?
-               end
+# Helper methods ---------------------------------------------------------------
+def import(file)
+  file = case file
+         when INotify::Event
+           Pathname(file.absolute_name)
+         else
+           Pathname(file)
+         end.cleanpath
 
-  SRC_DEST_MAP.keys.each { |dir| FileUtils.ln(files, dir) }
-  FileUtils.rm(files + Dir["#{Xferase::Config.staging}/web/*.DNG"]) # FIXME (ugly hack)
+  return unless file.exist?
+  return if file.basename.fnmatch?('.*')
+  return if file.dirname.join(".syncthing.#{file.basename}.tmp").exist?
 
-  break if debouncer.inspect_params[:threads] > 2 # don't let threads pile up
+  Xferase.logger.debug("#{file.basename}: new file detected in watch directory; importing...")
 
-  mutex.synchronize do
-    SRC_DEST_MAP.each do |src, dest|
-      Photein::Config.set(
-        source: src,
-        dest: dest,
-        'optimize-for': Pathname(src).basename.to_sym
-      )
+  Photein::MediaFile.for(file)&.import ||
+    Xferase.logger.debug("#{file.basename}: unrecognize media type")
+rescue => e
+  warn e.message
+end
 
-      Photein.run
-    end
-  rescue => e
-    warn e.message
-  end
-end.reducer(:+)
+def sync_deletions(event)
+  Xferase.logger.info("#{event.name} has disappeared!")
+
+  deleted_file   = Pathname(event.absolute_name).expand_path
+
+  sister_file    = if deleted_file.to_s.start_with?(File.expand_path(Xferase::Config.library))
+                    deleted_file.sub(Xferase::Config.library, Xferase::Config.library_web)
+                  else
+                    deleted_file.sub(Xferase::Config.library_web, Xferase::Config.library)
+                  end
+
+  sister_formats = FORMAT_GROUPS.find { |group| group.include?(deleted_file.extname) }
+
+  related_files  = [deleted_file, sister_file]
+    .product(sister_formats)
+    .map { |file, ext| file.sub_ext(ext) }
+    .select(&:file?)
+
+  # (Why mv to tmpdir first? Why not rm straight away?
+  # Because rm would recursively trigger this inotify callback.)
+  related_files.each { |f| Xferase.logger.info("deleting #{f.realpath}") }
+  FileUtils.mv(related_files, Dir.tmpdir)
+  FileUtils.rm(related_files.map { |f| File.join(Dir.tmpdir, f.basename) })
+end
 
 # Resume from interruption/failure ---------------------------------------------
-debouncer.call unless SRC_DEST_MAP.keys.all?(&Dir.method(:empty?))
-
-Dir["#{Xferase::Config.inbox}/**/*"]
+Dir["#{Xferase::Config.inbox}/**/*"].sort
   .select(&File.method(:file?))
-  .each { |path| debouncer.call(path) }
+  .each(&method(:import))
 
 # Start ------------------------------------------------------------------------
 Thread.new do
-  call_debouncer = ->(event) do
-    next if event.name.start_with?('.')
+  INotify::Notifier.new.tap do |import_notifier|
+    import_notifier.watch(Xferase::Config.inbox, :close_write, &method(:import))
 
-    Xferase.logger.debug("#{event.name}: new file detected in watch directory")
-    debouncer.call(event.absolute_name)
-  rescue => e
-    warn e.message
-  end
+    # NOTE: inotify is not recursive,
+    # so subdirectories must be watched separately!
+    # (Why do Syncthing folders get special treatment?
+    # Because ST works by creating hidden tempfiles and moving them upon completion)
+    stfolders, simple_subdirs = Dir["#{Xferase::Config.inbox}/**/*"]
+      .select(&File.method(:directory?))
+      .partition { |dir| Dir.children(dir).include?('.stfolder') }
 
-  import_notifier = INotify::Notifier.new
-  import_notifier.watch(Xferase::Config.inbox, :close_write, &call_debouncer)
-
-  # NOTE: inotify is not recursive,
-  # so subdirectories must be watched separately!
-  # (Why do Syncthing folders get special treatment?
-  # Because ST works by creating hidden tempfiles and moving them upon completion)
-  stfolders, simple_subdirs = Dir["#{Xferase::Config.inbox}/**/*"]
-    .select(&File.method(:directory?))
-    .partition { |dir| Dir.children(dir).include?('.stfolder') }
-
-  simple_subdirs.each { |dir| import_notifier.watch(dir, :close_write, &call_debouncer) }
-  stfolders.each { |dir| import_notifier.watch(dir, :moved_to, &call_debouncer) }
-
-  import_notifier.run
+    simple_subdirs.each { |dir| import_notifier.watch(dir, :close_write, &method(:import)) }
+    stfolders.each { |dir| import_notifier.watch(dir, :moved_to, &method(:import)) }
+  end.run
 end
 
 Thread.new do
-  sync_deletions = ->(event) do
-    Xferase.logger.info("#{event.name} has disappeared!")
-
-    deleted_file   = Pathname(event.absolute_name).expand_path
-
-    sister_file    = if deleted_file.to_s.start_with?(File.expand_path(Xferase::Config.library))
-                      deleted_file.sub(Xferase::Config.library, Xferase::Config.library_web)
-                    else
-                      deleted_file.sub(Xferase::Config.library_web, Xferase::Config.library)
-                    end
-
-    sister_formats = FORMAT_GROUPS.find { |group| group.include?(deleted_file.extname) }
-
-    related_files  = [deleted_file, sister_file]
-      .product(sister_formats)
-      .map { |file, ext| file.sub_ext(ext) }
-      .select(&:file?)
-
-    # (Why mv to tmpdir first? Why not rm straight away?
-    # Because rm would recursively trigger this inotify callback.)
-    related_files.each { |f| Xferase.logger.info("deleting #{f.realpath}") }
-    FileUtils.mv(related_files, Dir.tmpdir)
-    FileUtils.rm(related_files.map { |f| File.join(Dir.tmpdir, f.basename) })
-  end
-
-  deletion_notifier = INotify::Notifier.new
-
-  # NOTE: inotify is not recursive,
-  # so subdirectories must be watched separately!
-  (Dir["#{Xferase::Config.library}/**/*"] + Dir["#{Xferase::Config.library_web}/**/*"])
-    .select(&File.method(:directory?))
-    .each { |dir| deletion_notifier.watch(dir, :delete, &sync_deletions) }
-
-  deletion_notifier.run
+  INotify::Notifier.new.tap do |deletion_notifier|
+    # NOTE: inotify is not recursive,
+    # so subdirectories must be watched separately!
+    (Dir["#{Xferase::Config.library}/**/*"] + Dir["#{Xferase::Config.library_web}/**/*"])
+      .select(&File.method(:directory?))
+      .each { |dir| deletion_notifier.watch(dir, :delete, &method(:sync_deletions)) }
+  end.run
 end.join
