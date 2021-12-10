@@ -14,7 +14,7 @@ an easy thing for a busy person to do every time they take some photos.
 
 We can’t automate _all_ of these steps away, but with this guide,
 you can at least eliminate the mouse/keyboard interaction:
-_remove the SD card, plug it in, let it run, put it back._
+_plug the camera into USB, let it run, and done!_
 
 (There are, of course, other ways to do something similar—either
 using photo management software or with a Wi-Fi/Bluetooth-enabled camera—but
@@ -181,7 +181,7 @@ $ vim ~/.local/share/systemd/user/dcim-transfer.service
     After=dev-disk-by\x2dlabel-RICOH_GR.device
 
     [Service]
-    ExecStart=/bin/sh -c 'mount /media/ricoh_gr && find /media/ricoh_gr/DCIM -type f -exec mv -t /path/to/xferase/inbox "{}" + && find /media/ricoh_gr/DCIM/ -type d | tac | xargs rmdir --ignore-fail-on-non-empty "{}" + && umount /media/ricoh_gr'
+    ExecStart=/bin/sh -c 'mount /media/ricoh_gr && find /media/ricoh_gr/DCIM -type f -exec mv --no-clobber --target-directory=/path/to/xferase/inbox "{}" + && find /media/ricoh_gr/DCIM/ -type d | tac | xargs rmdir --ignore-fail-on-non-empty "{}" + && umount /media/ricoh_gr'
     Restart=no
 
     [Install]

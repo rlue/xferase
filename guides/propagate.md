@@ -61,31 +61,11 @@ Make sure to share it with your phone:
 
 Then, open Syncthing on your phone and accept the newly shared directory.
 You can configure it to sync to any folder on your phone;
-I prefer `/Pictures/library` (see warning below):
+I prefer `/Pictures/library`:
 
 <img src="../i/propagate_android.png" width="240">
 
 _Use the Android notifications menu to accept the new folder invitation._
-
-> ☝️ **Wait! But I already synced `/Pictures` to my inbox in the first guide.
-> Won’t it create some kind of circular dependency
-> if I sync my library back into it?**
->
-> Yes. To prevent this, go into your `/Pictures` folder’s configuration dialog;
-> under **Ignore Patterns**, add an entry for `/library`.
-> **Do this on BOTH desktop and Android**:
->
-> <img src="../i/propagate_ignore-library-desktop.png" width="480">
->
-> _Editing_ Ignore Patterns _on desktop._
->
-> <img src="../i/propagate_ignore-library-android.png" width="480">
->
-> _Editing_ Ignore Patterns _on Android._
->
-> See Syncthing’s [official documentation on ignore patterns][] for more.
->
-> [official documentation on Ignore Patterns]: https://docs.syncthing.net/users/ignoring.html
 
 Congratulations! You made it to the end.
 Your DIY cloud photo system is live;

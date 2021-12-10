@@ -85,7 +85,19 @@ Configure it to sync to a subdirectory of your Xferase inbox:
 
 <img src="../i/upload-phone_dcim-desktop.png" width="480">
 
-Repeat this process for your Android’s `/Pictures` directory,
-and for any other directories you’d like to auto-import photos from.
+Repeat this process for any other directories on your phone
+that you’d like to auto-import from
+(_e.g.,_ `/Pictures/Telegram`, `/Pictures/Instagram`, etc.).
+
+> ⚠️ **Warning: Don’t sync the whole `/Pictures` directory**
+>
+> Otherwise, you may end up with a recursively-syncing,
+> circular-dependency scenario in [the final step][].
+>
+> (There are ways to get around this using [ignore patterns][] in Syncthing,
+> but that’s beyond the scope of this guide.)
+>
+> [the final step]: propagate.md#step-2-add--accept-folders
+> [ignore patterns]: https://docs.syncthing.net/users/ignoring.html
 
 That’s all there is to it! 🥂
