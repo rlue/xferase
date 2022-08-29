@@ -3,7 +3,7 @@ PATH
   specs:
     xferase (0.1.1)
       debouncer (~> 0.2)
-      photein (~> 0.1, >= 0.1.3)
+      photein (~> 0.1, >= 0.1.4)
       rb-inotify (~> 0.10)
 
 GEM
@@ -27,7 +27,7 @@ GEM
     optipng (0.2.1)
       command-builder (>= 0.2.0)
       unix-whereis (>= 0.1.0)
-    photein (0.1.3)
+    photein (0.1.4)
       mediainfo (~> 1.5)
       mini_exiftool (~> 2.10)
       mini_magick (~> 4.11)
