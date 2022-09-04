@@ -58,6 +58,8 @@ rescue => e
 end
 
 def sync_deletions(event)
+  return if event.name.empty?
+
   Xferase.logger.info("#{event.name} has disappeared!")
 
   deleted_file   = Pathname(event.absolute_name).expand_path
