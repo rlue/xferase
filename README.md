@@ -221,6 +221,33 @@ it will be automatically deleted from the other.
 > if you shoot RAW+JPEG, deleting a .jpg will cause Xferase to delete the
 > corresponding raw image file (and vice versa).
 
+#### Better yet: Using Docker Compose
+
+With [Docker Compose][], you can store your deployment parameters
+in a static configuration file:
+
+```yaml
+# docker-compose.yml
+
+version: '3.4'
+
+services:
+  xferase:
+    image: rlue/xferase:latest
+    container_name: xferase
+    user: 1000:1000
+    environment:
+      TZ: America/Los_Angeles
+      INBOX: /data/.inbox
+      LIBRARY: /data/master
+      LIBRARY_WEB: /data/web
+    volumes:
+      - $HOME/Pictures:/data
+    restart: unless-stopped
+```
+
+[Docker Compose]: https://docs.docker.com/compose/
+
 Guides
 ------
 
