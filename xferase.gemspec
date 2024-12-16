@@ -15,7 +15,7 @@ Gem::Specification.new do |s|
   s.homepage = 'https://github.com/rlue/xferase'
 
   s.add_dependency 'debouncer', '~> 0.2'
-  s.add_dependency 'photein', '~> 0.1', '>= 0.1.5'
+  s.add_dependency 'photein', '~> 0.1', '>= 0.1.6'
   s.add_dependency 'rb-inotify', '~> 0.10'
   s.add_development_dependency 'pry', '~> 0.14'
   s.add_development_dependency 'rspec', '~> 3.10'
