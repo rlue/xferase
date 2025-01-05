@@ -264,6 +264,46 @@ Guides
 
 * [🖥️🔄📱 Sync your library (back) to other devices](guides/propagate.md)
 
+Bonus Features
+--------------
+
+Whenever you’re shooting on devices that need their clocks set manually,
+the timestamps on all your stuff can end up out of whack. For instance:
+
+* I often forget to adjust the clock on my camera when DST changes,
+  or when I fly across time zones.
+  In these cases, you will want to **shift timestamps**
+  by some fixed number of hours.
+
+  To apply this change automatically during import,
+  simply place your files in a directory named `shift-timestamp:<n>h`
+  (where `<n>` is an integer number of hours to shift by; _e.g.,_ `4` or `-8`).
+
+* Video timestamps should always be in UTC,
+  while photo timestamps should always be in local time.
+  (Don’t ask me for a source on this one;
+  supposedly it’s in the EXIF and MP4/MOV specs, which I don’t have access to,
+  but this fact is repeated all over the place on the Exiftool forums.)
+
+  If your camera doesn’t have GPS capabilities
+  or any other way of knowing what time zone it’s in,
+  your video timestamps will _not_ be in UTC.
+  In these cases, you will want to **backfill the missing time zone data**.
+
+  To apply this change automatically during import,
+  simply place your files in a directory named `local-tz:<timezone>`
+  (where `<timezone>` is a [valid IANA time zone][], with colons in place of slashes;
+  _e.g.,_ `America:Argentina:Buenos_Aires` or `Asia:Calcutta`).
+
+  Xferase is smart enough to make the right adjustments when you do this:
+  metadata timestamps will be set to UTC, and filename timestamps will be set to local time.
+
+  [valid IANA time zone]: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List
+
+To apply both changes, simply nest the folders within each other.
+If multiple conflicting directories are found,
+Xferase will use the one nearest to the file being imported.
+
 License
 -------
 

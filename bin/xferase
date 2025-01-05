@@ -16,7 +16,7 @@ Photein.logger = Xferase.logger
 
 ENV['MEDIAINFO_XML_PARSER'] ||= 'nokogiri'
 
-FORMAT_GROUPS = [%w(.jpg .dng .heic), %w(.mov .mp4), %w(.png)]
+FORMAT_GROUPS = [%w(.jpg .dng), %w(.heic), %w(.mov .mp4), %w(.png)]
 
 # Setup ------------------------------------------------------------------------
 require 'debouncer'
@@ -45,14 +45,16 @@ def import(file)
            Pathname(file)
          end.cleanpath
 
+  opts = Xferase::Config.extract_photein_opts(file)
+
   return unless file.exist?
   return if file.basename.fnmatch?('.*')
   return if file.dirname.join(".syncthing.#{file.basename}.tmp").exist?
 
   Xferase.logger.debug("#{file.basename}: new file detected in watch directory; importing...")
 
-  Photein::MediaFile.for(file)&.import ||
-    Xferase.logger.debug("#{file.basename}: unrecognize media type")
+  Photein::MediaFile.for(file, opts: opts)&.import ||
+    Xferase.logger.debug("#{file.basename}: unrecognized media type")
 rescue => e
   warn e.message
 end

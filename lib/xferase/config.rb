@@ -3,6 +3,8 @@
 require 'singleton'
 require 'optparse'
 
+require 'photein/config'
+
 module Xferase
   class Config
     include Singleton
@@ -55,6 +57,36 @@ module Xferase
 
       def respond_to_missing?(m, *args)
         @params.key?(m.to_s.tr('_', '-').to_sym) || super
+      end
+
+      def extract_photein_opts(path)
+        path.to_s.split('/')
+          .grep(/^(shift-timestamp|local-tz):.+$/)
+          .map { |opt| opt.split(':', 2) }
+          .select(&method(:validate_photein_opt))
+          .map(&method(:normalize_photein_opt)).to_h
+      end
+
+      private
+
+      def validate_photein_opt(opt)
+        case opt.first
+        when 'shift-timestamp'
+          opt.last.match?(/^[+-]?\d+h$/)
+        when 'local-tz'
+          Photein::Config::TZ_GEOCOORDS
+            .transform_keys(&:downcase)
+            .key?(opt.last.tr(':', '/').downcase)
+        end
+      end
+
+      def normalize_photein_opt(opt)
+        case opt.first
+        when 'shift-timestamp'
+          [:shift_timestamp, opt.last.tr('+h', '')]
+        when 'local-tz'
+          [:local_tz, opt.last.tr(':', '/')]
+        end
       end
     end
   end
