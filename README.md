@@ -182,11 +182,12 @@ Quick Start
 ```sh
 $ docker run -d \
     --name xferase \
-    --user $(id -u) \
+    --user $(id -u):$(id -g) \
     --env TZ=$(timedatectl show --property=Timezone --value) \
     --volume $HOME/Pictures:/data \
-    --env INBOX=/data/.inbox \
+    --env INBOX=/data/_inbox \
     --env LIBRARY=/data/master \
+    --env HOME=/tmp \ # hotfix for https://github.com/janfri/mini_exiftool/issues/51
     rlue/xferase
 ```
 
@@ -199,12 +200,13 @@ with videos being compressed to save space on disk.
 ```sh
 $ docker run -d \
     --name xferase \
-    --user $(id -u) \
+    --user $(id -u):$(id -g) \
     --env TZ=$(timedatectl show --property=Timezone --value) \
     --volume $HOME/Pictures:/data \
     --env INBOX=/data/.inbox \
     --env LIBRARY=/data/master \
     --env LIBRARY_WEB=/data/web \
+    --env HOME=/tmp \ # hotfix for https://github.com/janfri/mini_exiftool/issues/51
     rlue/xferase
 ```
 
@@ -241,6 +243,7 @@ services:
       INBOX: /data/.inbox
       LIBRARY: /data/master
       LIBRARY_WEB: /data/web
+      HOME: /tmp # hotfix for https://github.com/janfri/mini_exiftool/issues/51
     volumes:
       - $HOME/Pictures:/data
     restart: unless-stopped
