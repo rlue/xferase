@@ -243,7 +243,6 @@ services:
       INBOX: /data/.inbox
       LIBRARY: /data/master
       LIBRARY_WEB: /data/web
-      HOME: /tmp # hotfix for https://github.com/janfri/mini_exiftool/issues/51
     volumes:
       - $HOME/Pictures:/data
     restart: unless-stopped
