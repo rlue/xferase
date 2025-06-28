@@ -1,9 +1,9 @@
 PATH
   remote: .
   specs:
-    xferase (0.1.6)
+    xferase (0.1.8)
       debouncer (~> 0.2)
-      photein (~> 0.2, >= 0.2.5)
+      photein (~> 0.2, >= 0.2.7)
       rb-inotify (~> 0.10)
 
 GEM
@@ -42,7 +42,7 @@ GEM
     logger (1.6.3)
     mediainfo (1.5.0)
     method_source (1.1.0)
-    mini_exiftool (2.12.1)
+    mini_exiftool (2.14.0)
       ostruct (>= 0.6.0)
       pstore (>= 0.1.3)
     mini_magick (4.13.2)
@@ -56,11 +56,11 @@ GEM
       command-builder (>= 0.2.0)
       unix-whereis (>= 0.1.0)
     ostruct (0.6.1)
-    photein (0.2.5)
+    photein (0.2.7)
       activesupport (~> 8.0)
       logger (~> 1.6)
       mediainfo (~> 1.5)
-      mini_exiftool (~> 2.10)
+      mini_exiftool (~> 2.14)
       mini_magick (~> 4.11)
       nokogiri (~> 1.11)
       optipng (~> 0.2)

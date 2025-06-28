@@ -11,6 +11,6 @@ RUN apk add --no-cache --update \
     optipng \
     tzdata
 
-RUN gem install xferase --version 0.1.7
+RUN gem install xferase --version 0.1.8
 
 ENTRYPOINT xferase --inbox "$INBOX" --library "$LIBRARY" --library-web "$LIBRARY_WEB"
