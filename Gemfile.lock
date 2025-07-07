@@ -1,9 +1,9 @@
 PATH
   remote: .
   specs:
-    xferase (0.1.8)
+    xferase (0.1.9)
       debouncer (~> 0.2)
-      photein (~> 0.2, >= 0.2.7)
+      photein (~> 0.2, >= 0.2.8)
       rb-inotify (~> 0.10)
 
 GEM
@@ -56,7 +56,7 @@ GEM
       command-builder (>= 0.2.0)
       unix-whereis (>= 0.1.0)
     ostruct (0.6.1)
-    photein (0.2.7)
+    photein (0.2.8)
       activesupport (~> 8.0)
       logger (~> 1.6)
       mediainfo (~> 1.5)
