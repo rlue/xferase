@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    xferase (0.1.12)
+    xferase (0.1.13)
       debouncer (~> 0.2)
       photein (~> 0.2, >= 0.2.12)
       rb-inotify (~> 0.10)

@@ -6,11 +6,12 @@ RUN apk add --no-cache --update \
     build-base \
     exiftool \
     imagemagick \
+    imagemagick-heic \
     ffmpeg \
     mediainfo \
     optipng \
     tzdata
 
-RUN gem install xferase --version 0.1.12
+RUN gem install xferase --version 0.1.13
 
 ENTRYPOINT xferase --inbox "$INBOX" --library "$LIBRARY" --library-web "$LIBRARY_WEB"
